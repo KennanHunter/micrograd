@@ -1,11 +1,14 @@
 #![allow(unused)]
 
+pub mod generate_svg;
+
 use std::{
     fmt,
     ops::{Add, Div, Mul, Sub},
 };
 
-enum Value {
+#[derive(Clone)]
+pub enum Value {
     Leaf(f64),
     Addition(Box<Value>, Box<Value>),
     Subtraction(Box<Value>, Box<Value>),
@@ -13,14 +16,19 @@ enum Value {
     Division(Box<Value>, Box<Value>),
 }
 
-enum Example {
-    Small(u8),
-    Big([u8; 20000]),
-}
-
 impl Value {
-    fn new(data: f64) -> Self {
+    pub fn new(data: f64) -> Self {
         Value::Leaf(data)
+    }
+
+    pub fn children(&self) -> Option<(Value, Value)> {
+        match self {
+            Value::Leaf(_) => None,
+            Value::Addition(left, right) => Some((*left.clone(), *right.clone())),
+            Value::Subtraction(left, right) => Some((*left.clone(), *right.clone())),
+            Value::Multiplication(left, right) => Some((*left.clone(), *right.clone())),
+            Value::Division(left, right) => Some((*left.clone(), *right.clone())),
+        }
     }
 }
 

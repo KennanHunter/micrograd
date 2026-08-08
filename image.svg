@@ -1,0 +1,19 @@
+<svg viewBox="0 0 180 150" xmlns="http://www.w3.org/2000/svg">
+<line stroke="black" stroke-width="1" x1="90" x2="50" y1="50" y2="100"/>
+<line stroke="black" stroke-width="1" x1="90" x2="130" y1="50" y2="100"/>
+<rect fill="white" height="30" stroke="black" stroke-width="1" width="60" x="60" y="20"/>
+<text dominant-baseline="middle" font-family="monospace" font-size="14" text-anchor="middle" x="90" y="35">
+
++
+</text>
+<rect fill="white" height="30" stroke="black" stroke-width="1" width="60" x="20" y="100"/>
+<text dominant-baseline="middle" font-family="monospace" font-size="14" text-anchor="middle" x="50" y="115">
+
+2.000
+</text>
+<rect fill="white" height="30" stroke="black" stroke-width="1" width="60" x="100" y="100"/>
+<text dominant-baseline="middle" font-family="monospace" font-size="14" text-anchor="middle" x="130" y="115">
+
+4.000
+</text>
+</svg>
