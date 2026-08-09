@@ -50,23 +50,18 @@ pub fn build_graph(expr: &Value, with_values: bool) -> Document {
         let index = nodes.len();
         nodes.push(describe_node(&val, depth, index, parent, value, edge_label));
 
-        if let Some((left, right)) = val.children() {
-            let left_value = if with_values {
-                Some(left.evaluate_value())
+        let child_labels: Vec<Option<&'static str>> = match &val.operation {
+            ValueOperation::Exponentiation { .. } => vec![Some("base"), Some("exp")],
+            _ => vec![],
+        };
+        for (i, child) in val.children().into_iter().enumerate() {
+            let child_value = if with_values {
+                Some(child.evaluate_value())
             } else {
                 None
             };
-            let right_value = if with_values {
-                Some(right.evaluate_value())
-            } else {
-                None
-            };
-            let (left_label, right_label) = match &val.operation {
-                ValueOperation::Exponentiation { .. } => (Some("base"), Some("exp")),
-                _ => (None, None),
-            };
-            queue.push_back((left, depth + 1, Some(index), left_value, left_label));
-            queue.push_back((right, depth + 1, Some(index), right_value, right_label));
+            let label = child_labels.get(i).copied().flatten();
+            queue.push_back((child, depth + 1, Some(index), child_value, label));
         }
     }
 
@@ -195,12 +190,13 @@ fn describe_node(
         ValueOperation::Multiplication(_, _) => "*".to_owned(),
         ValueOperation::Division(_, _) => "/".to_owned(),
         ValueOperation::Exponentiation { .. } => "^".to_owned(),
+        ValueOperation::Tanh(_) => "tanh".to_owned(),
     };
 
     NodeDescription {
         operation_label,
         value,
-        gradiant: expr.gradiant,
+        gradiant: expr.gradient,
         depth,
         index,
         parent,

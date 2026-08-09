@@ -5,12 +5,13 @@ pub mod generate_svg;
 use std::{
     fmt,
     ops::{Add, Div, Mul, Sub},
+    slice::Iter,
 };
 
 #[derive(Clone)]
 pub struct Value {
     pub current_evaluation: f64,
-    pub gradiant: Option<f64>,
+    pub gradient: Option<f64>,
     pub operation: ValueOperation,
 }
 
@@ -22,27 +23,31 @@ pub enum ValueOperation {
     Multiplication(Box<Value>, Box<Value>),
     Division(Box<Value>, Box<Value>),
     Exponentiation { base: Box<Value>, exp: Box<Value> },
+    Tanh(Box<Value>),
 }
 
 impl Value {
     pub fn leaf(current_evaluation: f64) -> Self {
         Value {
             current_evaluation,
-            gradiant: None,
+            gradient: None,
             operation: ValueOperation::Leaf,
         }
     }
 
-    pub fn children(&self) -> Option<(Value, Value)> {
+    pub fn children(&self) -> Vec<Value> {
         match &self.operation {
-            ValueOperation::Leaf => None,
+            ValueOperation::Leaf => vec![],
             ValueOperation::Addition(left, right)
             | ValueOperation::Subtraction(left, right)
             | ValueOperation::Multiplication(left, right)
-            | ValueOperation::Division(left, right) => Some((*left.clone(), *right.clone())),
-            ValueOperation::Exponentiation { base, exp } => {
-                Some((*base.clone(), *exp.clone()))
+            | ValueOperation::Division(left, right) => {
+                vec![(**left).clone(), (**right).clone()]
             }
+            ValueOperation::Exponentiation { base, exp } => {
+                vec![(**base).clone(), (**exp).clone()]
+            }
+            ValueOperation::Tanh(value) => vec![(**value).clone()],
         }
     }
 
@@ -53,11 +58,19 @@ impl Value {
     pub fn pow(&self, exp: Value) -> Value {
         Value {
             current_evaluation: self.evaluate_value().powf(exp.evaluate_value()),
-            gradiant: None,
+            gradient: None,
             operation: ValueOperation::Exponentiation {
                 base: Box::new(self.clone()),
                 exp: Box::new(exp),
             },
+        }
+    }
+
+    pub fn tanh(&self) -> Value {
+        Value {
+            current_evaluation: self.evaluate_value().tanh(),
+            gradient: None,
+            operation: ValueOperation::Tanh(Box::new(self.clone())),
         }
     }
 }
@@ -74,7 +87,7 @@ impl Add for Value {
     fn add(self, rhs: Self) -> Self::Output {
         Value {
             current_evaluation: self.current_evaluation + rhs.current_evaluation,
-            gradiant: None,
+            gradient: None,
             operation: ValueOperation::Addition(Box::new(self), Box::new(rhs)),
         }
     }
@@ -86,7 +99,7 @@ impl Sub for Value {
     fn sub(self, rhs: Self) -> Self::Output {
         Value {
             current_evaluation: self.current_evaluation - rhs.current_evaluation,
-            gradiant: None,
+            gradient: None,
             operation: ValueOperation::Subtraction(Box::new(self), Box::new(rhs)),
         }
     }
@@ -98,7 +111,7 @@ impl Mul for Value {
     fn mul(self, rhs: Self) -> Self::Output {
         Value {
             current_evaluation: self.current_evaluation * rhs.current_evaluation,
-            gradiant: None,
+            gradient: None,
             operation: ValueOperation::Multiplication(Box::new(self), Box::new(rhs)),
         }
     }
@@ -110,7 +123,7 @@ impl Div for Value {
     fn div(self, rhs: Self) -> Self::Output {
         Value {
             current_evaluation: self.current_evaluation / rhs.current_evaluation,
-            gradiant: None,
+            gradient: None,
             operation: ValueOperation::Division(Box::new(self), Box::new(rhs)),
         }
     }
