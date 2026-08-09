@@ -8,14 +8,14 @@ use std::{
     slice::Iter,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Value {
     pub current_evaluation: f64,
     pub gradient: Option<f64>,
     pub operation: ValueOperation,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum ValueOperation {
     Leaf,
     Addition(Box<Value>, Box<Value>),
@@ -35,19 +35,15 @@ impl Value {
         }
     }
 
-    pub fn children(&self) -> Vec<Value> {
+    pub fn children(&self) -> Vec<&Value> {
         match &self.operation {
             ValueOperation::Leaf => vec![],
             ValueOperation::Addition(left, right)
             | ValueOperation::Subtraction(left, right)
             | ValueOperation::Multiplication(left, right)
-            | ValueOperation::Division(left, right) => {
-                vec![(**left).clone(), (**right).clone()]
-            }
-            ValueOperation::Exponentiation { base, exp } => {
-                vec![(**base).clone(), (**exp).clone()]
-            }
-            ValueOperation::Tanh(value) => vec![(**value).clone()],
+            | ValueOperation::Division(left, right) => vec![left, right],
+            ValueOperation::Exponentiation { base, exp } => vec![base, exp],
+            ValueOperation::Tanh(value) => vec![value],
         }
     }
 
@@ -73,11 +69,45 @@ impl Value {
             operation: ValueOperation::Tanh(Box::new(self.clone())),
         }
     }
-}
 
-impl fmt::Debug for Value {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Value(data=)")
+    pub fn backprop(&mut self, gradient: f64) {
+        self.gradient = Some(gradient);
+
+        match &mut self.operation {
+            ValueOperation::Leaf => {}
+            ValueOperation::Addition(left, right) => {
+                left.backprop(gradient);
+                right.backprop(gradient);
+            }
+            ValueOperation::Subtraction(left, right) => {
+                left.backprop(gradient);
+                // check if this is right
+                right.backprop(-gradient);
+            }
+
+            ValueOperation::Multiplication(left, right) => {
+                left.backprop(right.evaluate_value() * gradient);
+                right.backprop(left.evaluate_value() * gradient);
+            }
+
+            ValueOperation::Division(top, bottom) => {
+                // let bottom_gradiant = todo!();
+
+                // let top_gradiant = (gradient * bottom.evaluate_value().powi(2)
+                //     + top.evaluate_value() * bottom_gradiant)
+                //     / bottom.evaluate_value();
+
+                // top.backprop(top_gradiant);
+                //
+                todo!("Implement division")
+            }
+
+            ValueOperation::Tanh(child) => {
+                child.backprop((1.0 - child.evaluate_value().powi(2)) * gradient);
+            }
+
+            _ => todo!(""),
+        }
     }
 }
 
@@ -126,5 +156,138 @@ impl Div for Value {
             gradient: None,
             operation: ValueOperation::Division(Box::new(self), Box::new(rhs)),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs::create_dir_all;
+
+    use super::*;
+    use crate::generate_svg::build_graph;
+
+    #[test]
+    fn simple_example() {
+        let a = Value::leaf(1.0);
+        let b = Value::leaf(2.0);
+        let c = Value::leaf(3.0);
+
+        let mut expr = (a + b) * c;
+
+        let _ = create_dir_all("./renders/example");
+
+        svg::save("./renders/example/values.svg", &build_graph(&expr, true)).unwrap();
+
+        expr.backprop(1.0);
+
+        svg::save(
+            "./renders/example/values-with-backprop.svg",
+            &build_graph(&expr, true),
+        )
+        .unwrap();
+
+        println!("{:#?}", expr);
+
+        assert_eq!(
+            expr,
+            Value {
+                current_evaluation: 9.0,
+                gradient: Some(1.0,),
+                operation: ValueOperation::Multiplication(
+                    Box::new(Value {
+                        current_evaluation: 3.0,
+                        gradient: Some(3.0,),
+                        operation: ValueOperation::Addition(
+                            Box::new(Value {
+                                current_evaluation: 1.0,
+                                gradient: Some(3.0,),
+                                operation: ValueOperation::Leaf,
+                            }),
+                            Box::new(Value {
+                                current_evaluation: 2.0,
+                                gradient: Some(3.0,),
+                                operation: ValueOperation::Leaf,
+                            }),
+                        ),
+                    }),
+                    Box::new(Value {
+                        current_evaluation: 3.0,
+                        gradient: Some(3.0,),
+                        operation: ValueOperation::Leaf,
+                    }),
+                ),
+            }
+        );
+    }
+
+    #[test]
+    fn subtraction_example() {
+        let a = Value::leaf(5.0);
+        let b = Value::leaf(2.0);
+        let c = Value::leaf(3.0);
+
+        let mut expr = (a - b) * c;
+
+        expr.backprop(1.0);
+
+        assert_eq!(
+            expr,
+            Value {
+                current_evaluation: 9.0,
+                gradient: Some(1.0),
+                operation: ValueOperation::Multiplication(
+                    Box::new(Value {
+                        current_evaluation: 3.0,
+                        gradient: Some(3.0),
+                        operation: ValueOperation::Subtraction(
+                            Box::new(Value {
+                                current_evaluation: 5.0,
+                                gradient: Some(3.0),
+                                operation: ValueOperation::Leaf,
+                            }),
+                            Box::new(Value {
+                                current_evaluation: 2.0,
+                                gradient: Some(-3.0),
+                                operation: ValueOperation::Leaf,
+                            }),
+                        ),
+                    }),
+                    Box::new(Value {
+                        current_evaluation: 3.0,
+                        gradient: Some(3.0),
+                        operation: ValueOperation::Leaf,
+                    }),
+                ),
+            }
+        );
+    }
+
+    #[test]
+    fn addition_self() {
+        let a = Value::leaf(1.0);
+
+        let mut expr = a.clone() + a;
+
+        expr.backprop(1.0);
+
+        assert_eq!(
+            expr,
+            Value {
+                current_evaluation: 2.0,
+                gradient: Some(1.0),
+                operation: ValueOperation::Addition(
+                    Box::new(Value {
+                        current_evaluation: 1.0,
+                        gradient: Some(2.0),
+                        operation: ValueOperation::Leaf,
+                    }),
+                    Box::new(Value {
+                        current_evaluation: 1.0,
+                        gradient: Some(2.0),
+                        operation: ValueOperation::Leaf,
+                    }),
+                ),
+            }
+        );
     }
 }

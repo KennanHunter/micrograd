@@ -61,7 +61,7 @@ pub fn build_graph(expr: &Value, with_values: bool) -> Document {
                 None
             };
             let label = child_labels.get(i).copied().flatten();
-            queue.push_back((child, depth + 1, Some(index), child_value, label));
+            queue.push_back((child.clone(), depth + 1, Some(index), child_value, label));
         }
     }
 
