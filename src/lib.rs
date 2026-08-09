@@ -30,6 +30,17 @@ impl Value {
             Value::Division(left, right) => Some((*left.clone(), *right.clone())),
         }
     }
+
+    // Evaluate from top down
+    pub fn evaluate(&self) -> f64 {
+        match self {
+            Value::Leaf(val) => *val,
+            Value::Addition(left, right) => left.evaluate() + right.evaluate(),
+            Value::Subtraction(left, right) => left.evaluate() - right.evaluate(),
+            Value::Multiplication(left, right) => left.evaluate() * right.evaluate(),
+            Value::Division(left, right) => left.evaluate() / right.evaluate(),
+        }
+    }
 }
 
 impl fmt::Debug for Value {
