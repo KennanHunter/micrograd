@@ -11,6 +11,7 @@ struct NodeDescription {
     depth: usize,
     index: usize,
     parent: Option<usize>,
+    parent_edge_label: Option<&'static str>,
 }
 
 const NODE_WIDTH: f64 = 80.0;
@@ -24,7 +25,13 @@ const MIN_WIDTH: f64 = 400.0;
 pub fn build_graph(expr: &Value, with_values: bool) -> Document {
     // bfs the expression tree, tracking depth, parent index, and optionally value as we go
     let mut nodes: Vec<NodeDescription> = Vec::new();
-    let mut queue: VecDeque<(Value, usize, Option<usize>, Option<f64>)> = VecDeque::new();
+    let mut queue: VecDeque<(
+        Value,
+        usize,
+        Option<usize>,
+        Option<f64>,
+        Option<&'static str>,
+    )> = VecDeque::new();
     queue.push_back((
         expr.clone(),
         0,
@@ -34,19 +41,32 @@ pub fn build_graph(expr: &Value, with_values: bool) -> Document {
         } else {
             None
         },
+        None,
     ));
 
     // Convert from the recursive Value to a simpler flat NodeDescription,
     // include depth so we can build the actual svg
-    while let Some((val, depth, parent, value)) = queue.pop_front() {
+    while let Some((val, depth, parent, value, edge_label)) = queue.pop_front() {
         let index = nodes.len();
-        nodes.push(describe_node(&val, depth, index, parent, value));
+        nodes.push(describe_node(&val, depth, index, parent, value, edge_label));
 
         if let Some((left, right)) = val.children() {
-            let left_value = if with_values { Some(left.evaluate_value()) } else { None };
-            let right_value = if with_values { Some(right.evaluate_value()) } else { None };
-            queue.push_back((left, depth + 1, Some(index), left_value));
-            queue.push_back((right, depth + 1, Some(index), right_value));
+            let left_value = if with_values {
+                Some(left.evaluate_value())
+            } else {
+                None
+            };
+            let right_value = if with_values {
+                Some(right.evaluate_value())
+            } else {
+                None
+            };
+            let (left_label, right_label) = match &val.operation {
+                ValueOperation::Exponentiation { .. } => (Some("base"), Some("exp")),
+                _ => (None, None),
+            };
+            queue.push_back((left, depth + 1, Some(index), left_value, left_label));
+            queue.push_back((right, depth + 1, Some(index), right_value, right_label));
         }
     }
 
@@ -88,14 +108,35 @@ pub fn build_graph(expr: &Value, with_values: bool) -> Document {
         if let Some(parent) = node.parent {
             let (px, py) = positions[parent];
             let (cx, cy) = positions[node.index];
+            let x1 = px + NODE_WIDTH / 2.0;
+            let y1 = py + NODE_HEIGHT;
+            let x2 = cx + NODE_WIDTH / 2.0;
+            let y2 = cy;
             let line = Line::new()
-                .set("x1", px + NODE_WIDTH / 2.0)
-                .set("y1", py + NODE_HEIGHT)
-                .set("x2", cx + NODE_WIDTH / 2.0)
-                .set("y2", cy)
+                .set("x1", x1)
+                .set("y1", y1)
+                .set("x2", x2)
+                .set("y2", y2)
                 .set("stroke", "white")
                 .set("stroke-width", 1);
             document = document.add(line);
+
+            if let Some(label) = node.parent_edge_label {
+                let mx = (x1 + x2) / 2.0;
+                let my = (y1 + y2) / 2.0;
+                let label_text = Text::new(label)
+                    .set("x", mx)
+                    .set("y", my)
+                    .set("text-anchor", "middle")
+                    .set("dominant-baseline", "middle")
+                    .set("font-family", "monospace")
+                    .set("font-size", 10)
+                    .set("fill", "white")
+                    .set("stroke", "black")
+                    .set("stroke-width", 3)
+                    .set("paint-order", "stroke");
+                document = document.add(label_text);
+            }
         }
     }
 
@@ -145,6 +186,7 @@ fn describe_node(
     index: usize,
     parent: Option<usize>,
     value: Option<f64>,
+    parent_edge_label: Option<&'static str>,
 ) -> NodeDescription {
     let operation_label = match &expr.operation {
         ValueOperation::Leaf => "leaf".to_owned(),
@@ -152,6 +194,7 @@ fn describe_node(
         ValueOperation::Subtraction(_, _) => "-".to_owned(),
         ValueOperation::Multiplication(_, _) => "*".to_owned(),
         ValueOperation::Division(_, _) => "/".to_owned(),
+        ValueOperation::Exponentiation { .. } => "^".to_owned(),
     };
 
     NodeDescription {
@@ -161,5 +204,6 @@ fn describe_node(
         depth,
         index,
         parent,
+        parent_edge_label,
     }
 }

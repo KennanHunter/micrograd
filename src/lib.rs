@@ -21,6 +21,7 @@ pub enum ValueOperation {
     Subtraction(Box<Value>, Box<Value>),
     Multiplication(Box<Value>, Box<Value>),
     Division(Box<Value>, Box<Value>),
+    Exponentiation { base: Box<Value>, exp: Box<Value> },
 }
 
 impl Value {
@@ -39,11 +40,25 @@ impl Value {
             | ValueOperation::Subtraction(left, right)
             | ValueOperation::Multiplication(left, right)
             | ValueOperation::Division(left, right) => Some((*left.clone(), *right.clone())),
+            ValueOperation::Exponentiation { base, exp } => {
+                Some((*base.clone(), *exp.clone()))
+            }
         }
     }
 
     pub fn evaluate_value(&self) -> f64 {
         self.current_evaluation
+    }
+
+    pub fn pow(&self, exp: Value) -> Value {
+        Value {
+            current_evaluation: self.evaluate_value().powf(exp.evaluate_value()),
+            gradiant: None,
+            operation: ValueOperation::Exponentiation {
+                base: Box::new(self.clone()),
+                exp: Box::new(exp),
+            },
+        }
     }
 }
 

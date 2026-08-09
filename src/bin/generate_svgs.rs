@@ -22,4 +22,7 @@ fn main() {
     }
 
     svg::save("./renders/image-deep.svg", &build_graph(&big, true)).unwrap();
+
+    let pow_expr = Value::leaf(3.0).pow(Value::leaf(2.0)) + Value::leaf(1.0);
+    svg::save("./renders/image-pow.svg", &build_graph(&pow_expr, true)).unwrap();
 }
