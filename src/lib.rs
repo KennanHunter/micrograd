@@ -3,13 +3,18 @@
 pub mod generate_svg;
 
 use std::{
+    cell::{Ref, RefCell, RefMut},
     fmt,
     ops::{Add, Div, Mul, Sub},
+    rc::Rc,
     slice::Iter,
 };
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Value {
+pub struct Value(Rc<RefCell<Box<ValueInner>>>);
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ValueInner {
     pub current_evaluation: f64,
     pub gradient: Option<f64>,
     pub operation: ValueOperation,
@@ -18,62 +23,87 @@ pub struct Value {
 #[derive(Clone, Debug, PartialEq)]
 pub enum ValueOperation {
     Leaf,
-    Addition(Box<Value>, Box<Value>),
-    Subtraction(Box<Value>, Box<Value>),
-    Multiplication(Box<Value>, Box<Value>),
-    Division(Box<Value>, Box<Value>),
-    Exponentiation { base: Box<Value>, exp: Box<Value> },
-    Tanh(Box<Value>),
+    Addition(Value, Value),
+    Subtraction(Value, Value),
+    Multiplication(Value, Value),
+    Division(Value, Value),
+    Exponentiation { base: Value, exp: Value },
+    Tanh(Value),
+}
+
+impl From<ValueInner> for Value {
+    fn from(value: ValueInner) -> Self {
+        Value(Rc::new(RefCell::new(Box::new(value))))
+    }
 }
 
 impl Value {
+    fn inner(&self) -> Ref<'_, Box<ValueInner>> {
+        self.0
+            .try_borrow()
+            .expect("Value was already mutably borrowed")
+    }
+
+    fn inner_mut(&mut self) -> RefMut<'_, Box<ValueInner>> {
+        self.0
+            .try_borrow_mut()
+            .expect("Value was already mutably borrowed")
+    }
+
     pub fn leaf(current_evaluation: f64) -> Self {
-        Value {
+        (ValueInner {
             current_evaluation,
             gradient: None,
             operation: ValueOperation::Leaf,
-        }
+        })
+        .into()
     }
 
-    pub fn children(&self) -> Vec<&Value> {
-        match &self.operation {
+    pub fn children(&self) -> Vec<Value> {
+        let inner = self.inner();
+
+        match &inner.operation {
             ValueOperation::Leaf => vec![],
             ValueOperation::Addition(left, right)
             | ValueOperation::Subtraction(left, right)
             | ValueOperation::Multiplication(left, right)
-            | ValueOperation::Division(left, right) => vec![left, right],
-            ValueOperation::Exponentiation { base, exp } => vec![base, exp],
-            ValueOperation::Tanh(value) => vec![value],
+            | ValueOperation::Division(left, right) => vec![left.clone(), right.clone()],
+            ValueOperation::Exponentiation { base, exp } => vec![base.clone(), exp.clone()],
+            ValueOperation::Tanh(value) => vec![value.clone()],
         }
     }
 
     pub fn evaluate_value(&self) -> f64 {
-        self.current_evaluation
+        self.inner().current_evaluation
     }
 
     pub fn pow(&self, exp: Value) -> Value {
-        Value {
+        ValueInner {
             current_evaluation: self.evaluate_value().powf(exp.evaluate_value()),
             gradient: None,
             operation: ValueOperation::Exponentiation {
-                base: Box::new(self.clone()),
-                exp: Box::new(exp),
+                base: self.clone(),
+                exp: exp,
             },
         }
+        .into()
     }
 
     pub fn tanh(&self) -> Value {
-        Value {
+        ValueInner {
             current_evaluation: self.evaluate_value().tanh(),
             gradient: None,
-            operation: ValueOperation::Tanh(Box::new(self.clone())),
+            operation: ValueOperation::Tanh(self.clone()),
         }
+        .into()
     }
 
     pub fn backprop(&mut self, gradient: f64) {
-        self.gradient = Some(gradient);
+        let mut inner = self.inner_mut();
 
-        match &mut self.operation {
+        inner.gradient = Some(gradient);
+
+        match &mut inner.operation {
             ValueOperation::Leaf => {}
             ValueOperation::Addition(left, right) => {
                 left.backprop(gradient);
@@ -115,11 +145,14 @@ impl Add for Value {
     type Output = Value;
 
     fn add(self, rhs: Self) -> Self::Output {
-        Value {
-            current_evaluation: self.current_evaluation + rhs.current_evaluation,
+        let current_evaluation = self.inner().current_evaluation + rhs.inner().current_evaluation;
+
+        ValueInner {
+            current_evaluation,
             gradient: None,
-            operation: ValueOperation::Addition(Box::new(self), Box::new(rhs)),
+            operation: ValueOperation::Addition(self, rhs.clone()),
         }
+        .into()
     }
 }
 
@@ -127,11 +160,14 @@ impl Sub for Value {
     type Output = Value;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        Value {
-            current_evaluation: self.current_evaluation - rhs.current_evaluation,
+        let current_evaluation = self.inner().current_evaluation - rhs.inner().current_evaluation;
+
+        ValueInner {
+            current_evaluation,
             gradient: None,
-            operation: ValueOperation::Subtraction(Box::new(self), Box::new(rhs)),
+            operation: ValueOperation::Subtraction(self, rhs),
         }
+        .into()
     }
 }
 
@@ -139,11 +175,14 @@ impl Mul for Value {
     type Output = Value;
 
     fn mul(self, rhs: Self) -> Self::Output {
-        Value {
-            current_evaluation: self.current_evaluation * rhs.current_evaluation,
+        let current_evaluation = self.inner().current_evaluation * rhs.inner().current_evaluation;
+
+        ValueInner {
+            current_evaluation,
             gradient: None,
-            operation: ValueOperation::Multiplication(Box::new(self), Box::new(rhs)),
+            operation: ValueOperation::Multiplication(self, rhs),
         }
+        .into()
     }
 }
 
@@ -151,17 +190,19 @@ impl Div for Value {
     type Output = Value;
 
     fn div(self, rhs: Self) -> Self::Output {
-        Value {
-            current_evaluation: self.current_evaluation / rhs.current_evaluation,
+        let current_evaluation = self.inner().current_evaluation / rhs.inner().current_evaluation;
+        ValueInner {
+            current_evaluation,
             gradient: None,
-            operation: ValueOperation::Division(Box::new(self), Box::new(rhs)),
+            operation: ValueOperation::Division(self, rhs),
         }
+        .into()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::fs::create_dir_all;
+    use std::{fs::create_dir_all, time::Duration};
 
     use super::*;
     use crate::generate_svg::build_graph;
@@ -190,33 +231,38 @@ mod tests {
 
         assert_eq!(
             expr,
-            Value {
+            ValueInner {
                 current_evaluation: 9.0,
                 gradient: Some(1.0,),
                 operation: ValueOperation::Multiplication(
-                    Box::new(Value {
+                    (ValueInner {
                         current_evaluation: 3.0,
                         gradient: Some(3.0,),
                         operation: ValueOperation::Addition(
-                            Box::new(Value {
+                            (ValueInner {
                                 current_evaluation: 1.0,
                                 gradient: Some(3.0,),
                                 operation: ValueOperation::Leaf,
-                            }),
-                            Box::new(Value {
+                            }
+                            .into()),
+                            (ValueInner {
                                 current_evaluation: 2.0,
                                 gradient: Some(3.0,),
                                 operation: ValueOperation::Leaf,
-                            }),
+                            }
+                            .into()),
                         ),
-                    }),
-                    Box::new(Value {
+                    }
+                    .into()),
+                    (ValueInner {
                         current_evaluation: 3.0,
                         gradient: Some(3.0,),
                         operation: ValueOperation::Leaf,
-                    }),
+                    }
+                    .into()),
                 ),
             }
+            .into()
         );
     }
 
@@ -232,33 +278,38 @@ mod tests {
 
         assert_eq!(
             expr,
-            Value {
+            ValueInner {
                 current_evaluation: 9.0,
                 gradient: Some(1.0),
                 operation: ValueOperation::Multiplication(
-                    Box::new(Value {
+                    (ValueInner {
                         current_evaluation: 3.0,
                         gradient: Some(3.0),
                         operation: ValueOperation::Subtraction(
-                            Box::new(Value {
+                            (ValueInner {
                                 current_evaluation: 5.0,
                                 gradient: Some(3.0),
                                 operation: ValueOperation::Leaf,
-                            }),
-                            Box::new(Value {
+                            }
+                            .into()),
+                            (ValueInner {
                                 current_evaluation: 2.0,
                                 gradient: Some(-3.0),
                                 operation: ValueOperation::Leaf,
-                            }),
+                            }
+                            .into()),
                         ),
-                    }),
-                    Box::new(Value {
+                    }
+                    .into()),
+                    (ValueInner {
                         current_evaluation: 3.0,
                         gradient: Some(3.0),
                         operation: ValueOperation::Leaf,
-                    }),
+                    }
+                    .into()),
                 ),
             }
+            .into()
         );
     }
 
@@ -272,22 +323,80 @@ mod tests {
 
         assert_eq!(
             expr,
-            Value {
+            ValueInner {
                 current_evaluation: 2.0,
                 gradient: Some(1.0),
                 operation: ValueOperation::Addition(
-                    Box::new(Value {
+                    (ValueInner {
                         current_evaluation: 1.0,
                         gradient: Some(2.0),
                         operation: ValueOperation::Leaf,
-                    }),
-                    Box::new(Value {
+                    }
+                    .into()),
+                    (ValueInner {
                         current_evaluation: 1.0,
                         gradient: Some(2.0),
                         operation: ValueOperation::Leaf,
-                    }),
+                    }
+                    .into()),
                 ),
             }
+            .into()
         );
+    }
+
+    #[test]
+    fn rc_paragraph() {
+        struct Ex {}
+        impl Drop for Ex {
+            fn drop(&mut self) {
+                eprintln!("Dropped")
+            }
+        }
+
+        let a = Rc::new(Ex {});
+        let b = a.clone();
+        let c = a.clone();
+
+        println!("Our Rc is referenced {} times", Rc::strong_count(&a));
+
+        println!("Dropping a");
+        drop(a);
+
+        println!("Dropping b");
+        drop(b);
+
+        println!("Dropping c");
+        drop(c);
+    }
+
+    #[test]
+    #[should_panic]
+    fn refcell_paragraph() {
+        {
+            let mut a = 0;
+            let valid_mutable_reference = &mut a;
+
+            *valid_mutable_reference = *valid_mutable_reference + 1;
+
+            // let valid_immutable_reference = &a;
+            //                              ^ cannot borrow a as immutable
+
+            *valid_mutable_reference = *valid_mutable_reference + 1;
+        }
+
+        let mut a = RefCell::new(0);
+
+        let mut valid_mutable_reference: RefMut<'_, i32> = a.borrow_mut();
+
+        println!("Took valid mutable reference");
+
+        let invalid_immutable_reference: Ref<'_, i32> = a.borrow();
+
+        println!("Took a second mutable reference");
+
+        *valid_mutable_reference += 1;
+
+        drop(valid_mutable_reference);
     }
 }

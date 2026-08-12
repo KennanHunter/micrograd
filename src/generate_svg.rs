@@ -50,7 +50,7 @@ pub fn build_graph(expr: &Value, with_values: bool) -> Document {
         let index = nodes.len();
         nodes.push(describe_node(&val, depth, index, parent, value, edge_label));
 
-        let child_labels: Vec<Option<&'static str>> = match &val.operation {
+        let child_labels: Vec<Option<&'static str>> = match &val.inner().operation {
             ValueOperation::Exponentiation { .. } => vec![Some("base"), Some("exp")],
             _ => vec![],
         };
@@ -183,7 +183,7 @@ fn describe_node(
     value: Option<f64>,
     parent_edge_label: Option<&'static str>,
 ) -> NodeDescription {
-    let operation_label = match &expr.operation {
+    let operation_label = match &expr.inner().operation {
         ValueOperation::Leaf => "leaf".to_owned(),
         ValueOperation::Addition(_, _) => "+".to_owned(),
         ValueOperation::Subtraction(_, _) => "-".to_owned(),
@@ -196,7 +196,7 @@ fn describe_node(
     NodeDescription {
         operation_label,
         value,
-        gradiant: expr.gradient,
+        gradiant: expr.inner().gradient,
         depth,
         index,
         parent,
