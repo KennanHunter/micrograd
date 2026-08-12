@@ -101,7 +101,10 @@ impl Value {
     pub fn backprop(&mut self, gradient: f64) {
         let mut inner = self.inner_mut();
 
-        inner.gradient = Some(gradient);
+        match &mut inner.gradient {
+            Some(existing) => inner.gradient = Some(gradient + *existing),
+            None => inner.gradient = Some(gradient),
+        }
 
         match &mut inner.operation {
             ValueOperation::Leaf => {}
