@@ -188,9 +188,9 @@ fn describe_node(
         ValueOperation::Addition(_, _) => "+".to_owned(),
         ValueOperation::Subtraction(_, _) => "-".to_owned(),
         ValueOperation::Multiplication(_, _) => "*".to_owned(),
-        ValueOperation::Division(_, _) => "/".to_owned(),
         ValueOperation::Exponentiation { .. } => "^".to_owned(),
         ValueOperation::Tanh(_) => "tanh".to_owned(),
+        ValueOperation::Exp { .. } => "e^".to_owned(),
     };
 
     NodeDescription {
