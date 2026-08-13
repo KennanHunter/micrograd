@@ -1,6 +1,7 @@
 #![allow(unused)]
 
 pub mod generate_svg;
+pub mod neuron;
 
 #[cfg(test)]
 mod tests;
