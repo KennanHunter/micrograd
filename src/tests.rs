@@ -29,22 +29,26 @@ fn simple_example() {
         expr,
         ValueInner {
             current_evaluation: 9.0,
-            gradient: Some(1.0,),
+            gradient: Some(1.0),
+            label: None,
             operation: ValueOperation::Multiplication(
                 (ValueInner {
                     current_evaluation: 3.0,
-                    gradient: Some(3.0,),
+                    gradient: Some(3.0),
+                    label: None,
                     operation: ValueOperation::Addition(
                         (ValueInner {
                             current_evaluation: 1.0,
-                            gradient: Some(3.0,),
+                            gradient: Some(3.0),
                             operation: ValueOperation::Leaf,
+                            label: None
                         }
                         .into()),
                         (ValueInner {
                             current_evaluation: 2.0,
-                            gradient: Some(3.0,),
+                            gradient: Some(3.0),
                             operation: ValueOperation::Leaf,
+                            label: None
                         }
                         .into()),
                     ),
@@ -54,6 +58,7 @@ fn simple_example() {
                     current_evaluation: 3.0,
                     gradient: Some(3.0,),
                     operation: ValueOperation::Leaf,
+                    label: None
                 }
                 .into()),
             ),
@@ -77,20 +82,24 @@ fn subtraction_example() {
         ValueInner {
             current_evaluation: 9.0,
             gradient: Some(1.0),
+            label: None,
             operation: ValueOperation::Multiplication(
                 (ValueInner {
                     current_evaluation: 3.0,
                     gradient: Some(3.0),
+                    label: None,
                     operation: ValueOperation::Subtraction(
                         (ValueInner {
                             current_evaluation: 5.0,
                             gradient: Some(3.0),
+                            label: None,
                             operation: ValueOperation::Leaf,
                         }
                         .into()),
                         (ValueInner {
                             current_evaluation: 2.0,
                             gradient: Some(-3.0),
+                            label: None,
                             operation: ValueOperation::Leaf,
                         }
                         .into()),
@@ -100,6 +109,7 @@ fn subtraction_example() {
                 (ValueInner {
                     current_evaluation: 3.0,
                     gradient: Some(3.0),
+                    label: None,
                     operation: ValueOperation::Leaf,
                 }
                 .into()),
@@ -122,17 +132,20 @@ fn addition_self() {
         ValueInner {
             current_evaluation: 2.0,
             gradient: Some(1.0),
+            label: None,
             operation: ValueOperation::Addition(
                 (ValueInner {
                     current_evaluation: 1.0,
                     gradient: Some(2.0),
                     operation: ValueOperation::Leaf,
+                    label: None,
                 }
                 .into()),
                 (ValueInner {
                     current_evaluation: 1.0,
                     gradient: Some(2.0),
                     operation: ValueOperation::Leaf,
+                    label: None,
                 }
                 .into()),
             ),

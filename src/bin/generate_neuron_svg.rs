@@ -4,13 +4,12 @@ fn main() {
     let single_neuron = Neuron::new(5);
 
     let svg = generate_svg::build_graph(
-        &single_neuron.infer(&[
-            Value::leaf(1.0),
-            Value::leaf(0.0),
-            Value::leaf(0.5),
-            Value::leaf(-0.2),
-            Value::leaf(-0.6),
-        ]),
+        &single_neuron.infer(
+            &([1.0, 0.0, 0.5, -0.2, -0.6]
+                .into_iter()
+                .map(|val| Value::leaf(val).with_label("Input"))
+                .collect::<Vec<Value>>()),
+        ),
         true,
     );
 

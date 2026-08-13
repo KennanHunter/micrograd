@@ -10,10 +10,11 @@ pub struct Neuron {
 impl Neuron {
     pub fn new(size: usize) -> Self {
         // TODO: use random sampling?
-        let weights = Vec::from_iter(repeat(Value::leaf(0.0)).take(size));
+        let weights =
+            Vec::from_iter(repeat(Value::leaf(0.0).with_label("Neuron Weight")).take(size));
 
         Neuron {
-            bias: Value::leaf(0.0),
+            bias: Value::leaf(0.0).with_label("Neuron Bias"),
             weights,
         }
     }
@@ -30,10 +31,12 @@ impl Neuron {
         );
 
         for (input, weight) in x.iter().zip(self.weights.iter()) {
-            activation = activation + input.clone() * weight.clone();
+            let weighted_input = (input.clone() * weight.clone()).with_label("Input Weighting");
+
+            activation = (activation + weighted_input).with_label("Input Accumulation");
         }
 
-        activation.tanh()
+        activation.tanh().with_label("Neuron Activation")
     }
 }
 

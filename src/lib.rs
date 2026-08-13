@@ -22,6 +22,7 @@ pub struct ValueInner {
     pub current_evaluation: f64,
     pub gradient: Option<f64>,
     pub operation: ValueOperation,
+    pub label: Option<&'static str>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -42,6 +43,12 @@ impl From<ValueInner> for Value {
 }
 
 impl Value {
+    pub fn with_label(mut self, label: &'static str) -> Self {
+        self.inner_mut().label = Some(label);
+
+        self
+    }
+
     fn inner(&self) -> Ref<'_, ValueInner> {
         self.0
             .try_borrow()
@@ -59,6 +66,7 @@ impl Value {
             current_evaluation,
             gradient: None,
             operation: ValueOperation::Leaf,
+            label: None,
         })
         .into()
     }
@@ -88,6 +96,7 @@ impl Value {
                 base: self.clone(),
                 exp,
             },
+            label: None,
         }
         .into()
     }
@@ -97,6 +106,7 @@ impl Value {
             current_evaluation: self.evaluate_value().tanh(),
             gradient: None,
             operation: ValueOperation::Tanh(self.clone()),
+            label: None,
         }
         .into()
     }
@@ -107,6 +117,7 @@ impl Value {
             current_evaluation: self.evaluate_value().exp(),
             gradient: None,
             operation: ValueOperation::Exp { exp: self.clone() },
+            label: None,
         }
         .into()
     }
@@ -164,6 +175,7 @@ impl Add for Value {
             current_evaluation,
             gradient: None,
             operation: ValueOperation::Addition(self, rhs.clone()),
+            label: None,
         }
         .into()
     }
@@ -179,6 +191,7 @@ impl Sub for Value {
             current_evaluation,
             gradient: None,
             operation: ValueOperation::Subtraction(self, rhs),
+            label: None,
         }
         .into()
     }
@@ -194,6 +207,7 @@ impl Mul for Value {
             current_evaluation,
             gradient: None,
             operation: ValueOperation::Multiplication(self, rhs),
+            label: None,
         }
         .into()
     }
@@ -205,10 +219,12 @@ impl Div for Value {
     fn div(self, rhs: Self) -> Self::Output {
         let current_evaluation =
             self.inner().current_evaluation * rhs.inner().current_evaluation.powi(-1);
+
         ValueInner {
             current_evaluation,
             gradient: None,
             operation: ValueOperation::Multiplication(self, rhs.pow(Value::leaf(-1.0))),
+            label: None,
         }
         .into()
     }

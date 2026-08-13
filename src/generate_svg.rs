@@ -6,6 +6,7 @@ use svg::node::element::{Line, Rectangle, TSpan, Text};
 
 struct NodeDescription {
     operation_label: String,
+    label: Option<&'static str>,
     value: Option<f64>,
     gradiant: Option<f64>,
     depth: usize,
@@ -170,6 +171,18 @@ pub fn build_graph(expr: &Value, with_values: bool) -> Document {
             text = text.add(tspan);
         }
         document = document.add(rect).add(text);
+
+        if let Some(label) = node.label {
+            let label_text = Text::new(label)
+                .set("x", cx)
+                .set("y", y + 8.0)
+                .set("text-anchor", "middle")
+                .set("dominant-baseline", "middle")
+                .set("font-family", "monospace")
+                .set("font-size", 7)
+                .set("fill", "white");
+            document = document.add(label_text);
+        }
     }
 
     document
@@ -195,6 +208,7 @@ fn describe_node(
 
     NodeDescription {
         operation_label,
+        label: expr.inner().label,
         value,
         gradiant: expr.inner().gradient,
         depth,
