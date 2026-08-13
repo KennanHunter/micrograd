@@ -11,7 +11,7 @@ use std::{
 };
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Value(Rc<RefCell<Box<ValueInner>>>);
+pub struct Value(Rc<RefCell<ValueInner>>);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ValueInner {
@@ -33,18 +33,18 @@ pub enum ValueOperation {
 
 impl From<ValueInner> for Value {
     fn from(value: ValueInner) -> Self {
-        Value(Rc::new(RefCell::new(Box::new(value))))
+        Value(Rc::new(RefCell::new(value)))
     }
 }
 
 impl Value {
-    fn inner(&self) -> Ref<'_, Box<ValueInner>> {
+    fn inner(&self) -> Ref<'_, ValueInner> {
         self.0
             .try_borrow()
             .expect("Value was already mutably borrowed")
     }
 
-    fn inner_mut(&mut self) -> RefMut<'_, Box<ValueInner>> {
+    fn inner_mut(&mut self) -> RefMut<'_, ValueInner> {
         self.0
             .try_borrow_mut()
             .expect("Value was already mutably borrowed")
