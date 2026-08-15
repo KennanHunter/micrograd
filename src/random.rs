@@ -1,11 +1,11 @@
-trait SeededDistribution {
+pub trait SeededDistribution {
     fn new(seed: &str) -> Self;
 
     /// returns from range -1.0 to 1.0
     fn next(&mut self) -> f64;
 }
 
-struct UniformDistribution {
+pub struct UniformDistribution {
     state: u128,
 }
 

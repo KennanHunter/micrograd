@@ -1,4 +1,5 @@
 use crate::neuron::Layer;
+use crate::random::SeededDistribution;
 use crate::training::calculate_loss_from_outputs_and_targets;
 use crate::{Value, l};
 
@@ -7,8 +8,16 @@ pub struct MultiLayerPerceptron {
 }
 
 impl MultiLayerPerceptron {
-    pub fn new(sizes: &[usize]) -> MultiLayerPerceptron {
-        let layers = sizes.windows(2).map(|w| Layer::new(w[0], w[1])).collect();
+    pub fn new(sizes: &[usize], randomness: &mut impl SeededDistribution) -> MultiLayerPerceptron {
+        let layers = sizes
+            .windows(2)
+            .map(|w| {
+                let input_size = w[0];
+                let output_size = w[1];
+
+                Layer::new(input_size, output_size, randomness)
+            })
+            .collect();
 
         MultiLayerPerceptron { layers }
     }

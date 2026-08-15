@@ -1,4 +1,8 @@
-use micrograd::{l, multi_layer_perceptron::MultiLayerPerceptron};
+use micrograd::{
+    l,
+    multi_layer_perceptron::MultiLayerPerceptron,
+    random::{SeededDistribution, UniformDistribution},
+};
 
 fn main() {
     let inputs = [
@@ -10,10 +14,12 @@ fn main() {
 
     let targets = [vec![l!(1.0)], vec![l!(-1.0)], vec![l!(-1.0)], vec![l!(1.0)]];
 
-    let mut perceptron = MultiLayerPerceptron::new(&[3, 4, 4, 1]);
+    let mut randomness = UniformDistribution::new("test-seed");
+
+    let mut perceptron = MultiLayerPerceptron::new(&[3, 4, 4, 1], &mut randomness);
 
     let input_refs: Vec<&[_]> = inputs.iter().map(Vec::as_slice).collect();
     let target_refs: Vec<&[_]> = targets.iter().map(Vec::as_slice).collect();
 
-    perceptron.train(10, 0.01, &input_refs, &target_refs);
+    perceptron.train(20, 0.1, &input_refs, &target_refs);
 }

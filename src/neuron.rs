@@ -1,4 +1,4 @@
-use crate::{Value, l};
+use crate::{Value, l, random::SeededDistribution};
 use std::iter;
 
 #[derive(Clone)]
@@ -8,13 +8,13 @@ pub struct Neuron {
 }
 
 impl Neuron {
-    pub fn new(size: usize) -> Self {
+    pub fn new(size: usize, randomness: &mut impl SeededDistribution) -> Self {
         let weights = (0..size)
-            .map(|_| l!(0.5).with_label("Neuron Weight"))
+            .map(|_| l!(randomness.next()).with_label("Neuron Weight"))
             .collect();
 
         Neuron {
-            bias: l!(0.5).with_label("Neuron Bias"),
+            bias: l!(randomness.next()).with_label("Neuron Bias"),
             weights,
         }
     }
@@ -52,9 +52,15 @@ pub struct Layer {
 }
 
 impl Layer {
-    pub fn new(input_size: usize, output_size: usize) -> Layer {
+    pub fn new(
+        input_size: usize,
+        output_size: usize,
+        randomness: &mut impl SeededDistribution,
+    ) -> Layer {
         Layer {
-            neurons: (0..output_size).map(|_| Neuron::new(input_size)).collect(),
+            neurons: (0..output_size)
+                .map(|_| Neuron::new(input_size, randomness))
+                .collect(),
         }
     }
 

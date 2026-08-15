@@ -1,6 +1,7 @@
 use micrograd::{
     generate_svg, l,
     multi_layer_perceptron::MultiLayerPerceptron,
+    random::{SeededDistribution, UniformDistribution},
     training::{calculate_loss_from_outputs_and_targets, format_values},
 };
 
@@ -14,7 +15,9 @@ fn main() {
 
     let targets = [l!(1.0), l!(-1.0), l!(-1.0), l!(1.0)];
 
-    let perceptron = MultiLayerPerceptron::new(&[3, 1]);
+    let mut randomness = UniformDistribution::new("test-seed");
+
+    let perceptron = MultiLayerPerceptron::new(&[3, 1], &mut randomness);
 
     let mut total_loss = l!(0.0);
 
