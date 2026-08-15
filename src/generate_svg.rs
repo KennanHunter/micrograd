@@ -196,18 +196,8 @@ fn describe_node(
     value: Option<f64>,
     parent_edge_label: Option<&'static str>,
 ) -> NodeDescription {
-    let operation_label = match &expr.inner().operation {
-        ValueOperation::Leaf => "leaf".to_owned(),
-        ValueOperation::Addition(_, _) => "+".to_owned(),
-        ValueOperation::Subtraction(_, _) => "-".to_owned(),
-        ValueOperation::Multiplication(_, _) => "*".to_owned(),
-        ValueOperation::Exponentiation { .. } => "^".to_owned(),
-        ValueOperation::Tanh(_) => "tanh".to_owned(),
-        ValueOperation::Exp { .. } => "e^".to_owned(),
-    };
-
     NodeDescription {
-        operation_label,
+        operation_label: (&expr.inner().operation).to_string(),
         label: expr.inner().label,
         value,
         gradiant: expr.inner().gradient,

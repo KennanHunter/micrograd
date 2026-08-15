@@ -1,13 +1,12 @@
 use std::{fs::create_dir_all, time::Duration};
-
 use super::*;
-use crate::generate_svg::build_graph;
+use crate::{generate_svg::build_graph, l};
 
 #[test]
 fn simple_example() {
-    let a = Value::leaf(1.0);
-    let b = Value::leaf(2.0);
-    let c = Value::leaf(3.0);
+    let a = l!(1.0);
+    let b = l!(2.0);
+    let c = l!(3.0);
 
     let mut expr = (a + b) * c;
 
@@ -69,9 +68,9 @@ fn simple_example() {
 
 #[test]
 fn subtraction_example() {
-    let a = Value::leaf(5.0);
-    let b = Value::leaf(2.0);
-    let c = Value::leaf(3.0);
+    let a = l!(5.0);
+    let b = l!(2.0);
+    let c = l!(3.0);
 
     let mut expr = (a - b) * c;
 
@@ -121,7 +120,7 @@ fn subtraction_example() {
 
 #[test]
 fn addition_self() {
-    let a = Value::leaf(1.0);
+    let a = l!(1.0);
 
     let mut expr = a.clone() + a;
 
@@ -224,11 +223,11 @@ fn assert_close(actual: f64, expected: f64, label: &str) {
 /// Expected values generated from karpathy's micrograd via `python/verify_neuron.py`.
 #[test]
 fn neuron_tanh() {
-    let x1 = Value::leaf(2.0);
-    let x2 = Value::leaf(0.0);
-    let w1 = Value::leaf(-3.0);
-    let w2 = Value::leaf(1.0);
-    let b = Value::leaf(6.881373587019543);
+    let x1 = l!(2.0);
+    let x2 = l!(0.0);
+    let w1 = l!(-3.0);
+    let w2 = l!(1.0);
+    let b = l!(6.881373587019543);
 
     let n = x1.clone() * w1.clone() + x2.clone() * w2.clone() + b.clone();
     let mut o = n.tanh();
@@ -248,15 +247,15 @@ fn neuron_tanh() {
 /// Exercises Exp, Sub, and Div (implemented via pow(-1)).
 #[test]
 fn neuron_tanh_via_exp() {
-    let x1 = Value::leaf(2.0);
-    let x2 = Value::leaf(0.0);
-    let w1 = Value::leaf(-3.0);
-    let w2 = Value::leaf(1.0);
-    let b = Value::leaf(6.881373587019543);
+    let x1 = l!(2.0);
+    let x2 = l!(0.0);
+    let w1 = l!(-3.0);
+    let w2 = l!(1.0);
+    let b = l!(6.881373587019543);
 
     let n = x1.clone() * w1.clone() + x2.clone() * w2.clone() + b.clone();
-    let e = (Value::leaf(2.0) * n.clone()).exp();
-    let mut o = (e.clone() - Value::leaf(1.0)) / (e + Value::leaf(1.0));
+    let e = (l!(2.0) * n.clone()).exp();
+    let mut o = (e.clone() - l!(1.0)) / (e + l!(1.0));
 
     o.backprop(1.0);
 

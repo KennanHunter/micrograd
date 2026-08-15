@@ -1,4 +1,4 @@
-use micrograd::{Value, generate_svg, neuron::Neuron};
+use micrograd::{Value, generate_svg, l, neuron::Neuron};
 
 fn main() {
     let single_neuron = Neuron::new(5);
@@ -7,7 +7,7 @@ fn main() {
         &single_neuron.infer(
             &([1.0, 0.0, 0.5, -0.2, -0.6]
                 .into_iter()
-                .map(|val| Value::leaf(val).with_label("Input"))
+                .map(|val| l!(val).with_label("Input"))
                 .collect::<Vec<Value>>()),
         ),
         true,

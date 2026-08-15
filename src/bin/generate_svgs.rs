@@ -1,4 +1,4 @@
-use micrograd::{Value, generate_svg::build_graph};
+use micrograd::{generate_svg::build_graph, l};
 use std::fs;
 
 fn main() {
@@ -6,23 +6,19 @@ fn main() {
 
     svg::save(
         "./renders/image.svg",
-        &build_graph(
-            &(Value::leaf(2.0) + Value::leaf(4.0) * (Value::leaf(4.0) - Value::leaf(1.0))),
-            true,
-        ),
+        &build_graph(&(l!(2.0) + l!(4.0) * (l!(4.0) - l!(1.0))), true),
     )
     .unwrap();
 
-    let mut big = Value::leaf(1.0);
+    let mut big = l!(1.0);
     for i in 0..6 {
         let f = i as f64;
-        let branch = (Value::leaf(f + 1.0) + Value::leaf(f + 2.0))
-            * (Value::leaf(f + 3.0) - Value::leaf(f + 4.0));
+        let branch = (l!(f + 1.0) + l!(f + 2.0)) * (l!(f + 3.0) - l!(f + 4.0));
         big = big + branch;
     }
 
     svg::save("./renders/image-deep.svg", &build_graph(&big, true)).unwrap();
 
-    let pow_expr = Value::leaf(3.0).pow(Value::leaf(2.0)) + Value::leaf(1.0);
+    let pow_expr = l!(3.0).pow(l!(2.0)) + l!(1.0);
     svg::save("./renders/image-pow.svg", &build_graph(&pow_expr, true)).unwrap();
 }

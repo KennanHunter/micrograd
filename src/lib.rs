@@ -2,20 +2,40 @@
 
 pub mod generate_svg;
 pub mod neuron;
+pub mod training;
 
 #[cfg(test)]
 mod tests;
 
 use std::{
     cell::{Ref, RefCell, RefMut},
-    fmt,
+    fmt::{self, Display, Write},
     ops::{Add, Div, Mul, Sub},
     rc::Rc,
     slice::Iter,
 };
 
+#[macro_export]
+macro_rules! l {
+    ( $x:expr ) => {{ $crate::Value::leaf($x) }};
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Value(Rc<RefCell<ValueInner>>);
+
+impl Display for Value {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let inner = self.inner();
+        match &inner.operation {
+            ValueOperation::Leaf => write!(f, "Leaf({})", inner.current_evaluation),
+            op => write!(
+                f,
+                "Value(Op={}, v={}, g={:?})",
+                op, inner.current_evaluation, inner.gradient
+            ),
+        }
+    }
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ValueInner {
@@ -34,6 +54,21 @@ pub enum ValueOperation {
     Exponentiation { base: Value, exp: Value },
     Exp { exp: Value },
     Tanh(Value),
+}
+
+impl Display for ValueOperation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            ValueOperation::Leaf => "leaf",
+            ValueOperation::Addition(_, _) => "+",
+            ValueOperation::Subtraction(_, _) => "-",
+            ValueOperation::Multiplication(_, _) => "*",
+            ValueOperation::Exponentiation { .. } => "^",
+            ValueOperation::Tanh(_) => "tanh",
+            ValueOperation::Exp { .. } => "e^",
+        };
+        f.write_str(s)
+    }
 }
 
 impl From<ValueInner> for Value {
@@ -223,7 +258,7 @@ impl Div for Value {
         ValueInner {
             current_evaluation,
             gradient: None,
-            operation: ValueOperation::Multiplication(self, rhs.pow(Value::leaf(-1.0))),
+            operation: ValueOperation::Multiplication(self, rhs.pow(l!(-1.0))),
             label: None,
         }
         .into()
