@@ -9,13 +9,12 @@ pub struct Neuron {
 
 impl Neuron {
     pub fn new(size: usize) -> Self {
-        // TODO: use random sampling?
         let weights = (0..size)
-            .map(|_| l!(0.0).with_label("Neuron Weight"))
+            .map(|_| l!(0.5).with_label("Neuron Weight"))
             .collect();
 
         Neuron {
-            bias: l!(0.0).with_label("Neuron Bias"),
+            bias: l!(0.5).with_label("Neuron Bias"),
             weights,
         }
     }

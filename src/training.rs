@@ -1,4 +1,4 @@
-use crate::{Value, l, multi_layer_perceptron::MultiLayerPerceptron};
+use crate::{Value, l};
 use std::fmt::Write;
 
 pub fn format_values(values: &[Value]) -> String {
@@ -17,7 +17,7 @@ pub fn calculate_loss_from_outputs_and_targets(output: &[Value], target: &[Value
         "loss calculation should use the same length of output and expected"
     );
 
-    let total_loss = output
+    output
         .iter()
         .zip(target.iter())
         .map(|(out, expected)| (out.clone() - expected.clone()).with_label("Loss"))
@@ -25,12 +25,8 @@ pub fn calculate_loss_from_outputs_and_targets(output: &[Value], target: &[Value
             (acc + node_loss)
                 .with_label("Loss Accumulation")
                 .pow(l!(2.0))
-        });
-
-    total_loss
+        })
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-}
+mod tests {}

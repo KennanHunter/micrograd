@@ -1,6 +1,6 @@
-use std::{fs::create_dir_all, time::Duration};
 use super::*;
 use crate::{generate_svg::build_graph, l};
+use std::fs::create_dir_all;
 
 #[test]
 fn simple_example() {
@@ -31,35 +31,35 @@ fn simple_example() {
             gradient: Some(1.0),
             label: None,
             operation: ValueOperation::Multiplication(
-                (ValueInner {
+                ValueInner {
                     current_evaluation: 3.0,
                     gradient: Some(3.0),
                     label: None,
                     operation: ValueOperation::Addition(
-                        (ValueInner {
+                        ValueInner {
                             current_evaluation: 1.0,
                             gradient: Some(3.0),
                             operation: ValueOperation::Leaf,
                             label: None
                         }
-                        .into()),
-                        (ValueInner {
+                        .into(),
+                        ValueInner {
                             current_evaluation: 2.0,
                             gradient: Some(3.0),
                             operation: ValueOperation::Leaf,
                             label: None
                         }
-                        .into()),
+                        .into(),
                     ),
                 }
-                .into()),
-                (ValueInner {
+                .into(),
+                ValueInner {
                     current_evaluation: 3.0,
                     gradient: Some(3.0,),
                     operation: ValueOperation::Leaf,
                     label: None
                 }
-                .into()),
+                .into(),
             ),
         }
         .into()
@@ -83,35 +83,35 @@ fn subtraction_example() {
             gradient: Some(1.0),
             label: None,
             operation: ValueOperation::Multiplication(
-                (ValueInner {
+                ValueInner {
                     current_evaluation: 3.0,
                     gradient: Some(3.0),
                     label: None,
                     operation: ValueOperation::Subtraction(
-                        (ValueInner {
+                        ValueInner {
                             current_evaluation: 5.0,
                             gradient: Some(3.0),
                             label: None,
                             operation: ValueOperation::Leaf,
                         }
-                        .into()),
-                        (ValueInner {
+                        .into(),
+                        ValueInner {
                             current_evaluation: 2.0,
                             gradient: Some(-3.0),
                             label: None,
                             operation: ValueOperation::Leaf,
                         }
-                        .into()),
+                        .into(),
                     ),
                 }
-                .into()),
-                (ValueInner {
+                .into(),
+                ValueInner {
                     current_evaluation: 3.0,
                     gradient: Some(3.0),
                     label: None,
                     operation: ValueOperation::Leaf,
                 }
-                .into()),
+                .into(),
             ),
         }
         .into()
@@ -133,20 +133,20 @@ fn addition_self() {
             gradient: Some(1.0),
             label: None,
             operation: ValueOperation::Addition(
-                (ValueInner {
+                ValueInner {
                     current_evaluation: 1.0,
                     gradient: Some(2.0),
                     operation: ValueOperation::Leaf,
                     label: None,
                 }
-                .into()),
-                (ValueInner {
+                .into(),
+                ValueInner {
                     current_evaluation: 1.0,
                     gradient: Some(2.0),
                     operation: ValueOperation::Leaf,
                     label: None,
                 }
-                .into()),
+                .into(),
             ),
         }
         .into()
@@ -185,21 +185,21 @@ fn refcell_paragraph() {
         let mut a = 0;
         let valid_mutable_reference = &mut a;
 
-        *valid_mutable_reference = *valid_mutable_reference + 1;
+        *valid_mutable_reference += 1;
 
         // let valid_immutable_reference = &a;
         //                              ^ cannot borrow a as immutable
 
-        *valid_mutable_reference = *valid_mutable_reference + 1;
+        *valid_mutable_reference += 1;
     }
 
-    let mut a = RefCell::new(0);
+    let a = RefCell::new(0);
 
     let mut valid_mutable_reference: RefMut<'_, i32> = a.borrow_mut();
 
     println!("Took valid mutable reference");
 
-    let invalid_immutable_reference: Ref<'_, i32> = a.borrow();
+    let _invalid_immutable_reference: Ref<'_, i32> = a.borrow();
 
     println!("Took a second mutable reference");
 

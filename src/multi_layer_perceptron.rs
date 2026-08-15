@@ -41,14 +41,11 @@ impl MultiLayerPerceptron {
             // 1. Running a forward inference pass.
             let mut total_loss = l!(0.0).with_label("Total Loss");
 
-            for (single_example_inputs, single_example_targets) in
-                inputs.into_iter().zip(targets.into_iter())
-            {
-                let output = self.infer(&single_example_inputs);
+            for (single_example_inputs, single_example_targets) in inputs.iter().zip(targets) {
+                let output = self.infer(single_example_inputs);
 
                 // 2. Calculating the loss
-                let loss =
-                    calculate_loss_from_outputs_and_targets(&output, &single_example_targets);
+                let loss = calculate_loss_from_outputs_and_targets(&output, single_example_targets);
 
                 total_loss = (total_loss + loss.clone()).with_label("Ex Loss Accumulation");
             }

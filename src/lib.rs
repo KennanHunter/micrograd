@@ -1,19 +1,17 @@
-#![allow(unused)]
-
 pub mod generate_svg;
-pub mod neuron;
-pub mod training;
 pub mod multi_layer_perceptron;
+pub mod neuron;
+pub mod random;
+pub mod training;
 
 #[cfg(test)]
 mod tests;
 
 use std::{
     cell::{Ref, RefCell, RefMut},
-    fmt::{self, Display, Write},
+    fmt::{self, Display},
     ops::{Add, Div, Mul, Sub},
     rc::Rc,
-    slice::Iter,
 };
 
 #[macro_export]
@@ -125,7 +123,7 @@ impl Value {
     }
 
     pub fn step_value(&mut self, learning_rate: f64) {
-        let mut  inner = self.inner_mut();
+        let mut inner = self.inner_mut();
         inner.current_evaluation -= learning_rate
             * inner
                 .gradient

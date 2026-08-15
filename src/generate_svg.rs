@@ -1,14 +1,13 @@
 use crate::{Value, ValueOperation};
 use std::collections::VecDeque;
 use svg::Document;
-use svg::node::Text as TextNode;
 use svg::node::element::{Line, Rectangle, TSpan, Text};
 
 struct NodeDescription {
     operation_label: String,
     label: Option<&'static str>,
     value: Option<f64>,
-    gradiant: Option<f64>,
+    gradient: Option<f64>,
     depth: usize,
     index: usize,
     parent: Option<usize>,
@@ -152,7 +151,7 @@ pub fn build_graph(expr: &Value, with_values: bool) -> Document {
             node.value
                 .map(|v| format!("v={:.3}", v))
                 .unwrap_or_else(|| "v=?".to_owned()),
-            node.gradiant
+            node.gradient
                 .map(|g| format!("g={:.3}", g))
                 .unwrap_or_else(|| "g=?".to_owned()),
         ];
@@ -197,10 +196,10 @@ fn describe_node(
     parent_edge_label: Option<&'static str>,
 ) -> NodeDescription {
     NodeDescription {
-        operation_label: (&expr.inner().operation).to_string(),
+        operation_label: expr.inner().operation.to_string(),
         label: expr.inner().label,
         value,
-        gradiant: expr.inner().gradient,
+        gradient: expr.inner().gradient,
         depth,
         index,
         parent,

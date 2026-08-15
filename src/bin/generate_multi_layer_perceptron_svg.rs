@@ -18,10 +18,10 @@ fn main() {
 
     let mut total_loss = l!(0.0);
 
-    for (input, target) in inputs.into_iter().zip(targets.into_iter()) {
+    for (input, target) in inputs.into_iter().zip(targets) {
         let output = perceptron.infer(&input);
 
-        let loss = calculate_loss_from_outputs_and_targets(&output, &[target.clone()]);
+        let loss = calculate_loss_from_outputs_and_targets(&output, std::slice::from_ref(&target));
 
         total_loss = (total_loss + loss.clone()).with_label("Example Loss Accumulation");
 
