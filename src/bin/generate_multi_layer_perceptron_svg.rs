@@ -1,6 +1,6 @@
 use micrograd::{
     generate_svg, l,
-    neuron::MultiLayerPerceptron,
+    multi_layer_perceptron::MultiLayerPerceptron,
     training::{calculate_loss_from_outputs_and_targets, format_values},
 };
 

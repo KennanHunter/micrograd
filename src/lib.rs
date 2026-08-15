@@ -3,6 +3,7 @@
 pub mod generate_svg;
 pub mod neuron;
 pub mod training;
+pub mod multi_layer_perceptron;
 
 #[cfg(test)]
 mod tests;
@@ -123,6 +124,14 @@ impl Value {
         self.inner().current_evaluation
     }
 
+    pub fn step_value(&mut self, learning_rate: f64) {
+        let mut  inner = self.inner_mut();
+        inner.current_evaluation -= learning_rate
+            * inner
+                .gradient
+                .expect("Should have gradient when step_value run");
+    }
+
     pub fn pow(&self, exp: Value) -> Value {
         ValueInner {
             current_evaluation: self.evaluate_value().powf(exp.evaluate_value()),
@@ -155,6 +164,14 @@ impl Value {
             label: None,
         }
         .into()
+    }
+
+    pub fn zero_gradient(&mut self) {
+        self.inner_mut().gradient = None;
+
+        for mut child in self.children() {
+            child.zero_gradient();
+        }
     }
 
     pub fn backprop(&mut self, gradient: f64) {

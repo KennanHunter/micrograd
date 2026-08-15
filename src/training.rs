@@ -1,6 +1,5 @@
+use crate::{Value, l, multi_layer_perceptron::MultiLayerPerceptron};
 use std::fmt::Write;
-
-use crate::{Value, l, neuron::MultiLayerPerceptron};
 
 pub fn format_values(values: &[Value]) -> String {
     let mut out = String::from("[\n");

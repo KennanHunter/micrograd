@@ -53,39 +53,17 @@ pub struct Layer {
 }
 
 impl Layer {
-    fn new(input_size: usize, output_size: usize) -> Layer {
+    pub fn new(input_size: usize, output_size: usize) -> Layer {
         Layer {
             neurons: (0..output_size).map(|_| Neuron::new(input_size)).collect(),
         }
     }
 
-    fn infer(&self, input: &[Value]) -> Vec<Value> {
+    pub fn infer(&self, input: &[Value]) -> Vec<Value> {
         self.neurons.iter().map(|n| n.infer(input)).collect()
     }
 
-    fn parameters(&self) -> impl Iterator<Item = Value> + '_ {
-        self.neurons.iter().flat_map(|neuron| neuron.parameters())
-    }
-}
-
-pub struct MultiLayerPerceptron {
-    layers: Vec<Layer>,
-}
-
-impl MultiLayerPerceptron {
-    pub fn new(sizes: &[usize]) -> MultiLayerPerceptron {
-        let layers = sizes.windows(2).map(|w| Layer::new(w[0], w[1])).collect();
-
-        MultiLayerPerceptron { layers }
-    }
-
-    pub fn infer(&self, input: &[Value]) -> Vec<Value> {
-        self.layers
-            .iter()
-            .fold(input.to_vec(), |acc, layer| layer.infer(&acc))
-    }
-
     pub fn parameters(&self) -> impl Iterator<Item = Value> + '_ {
-        self.layers.iter().flat_map(|layer| layer.parameters())
+        self.neurons.iter().flat_map(|neuron| neuron.parameters())
     }
 }
